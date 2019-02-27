@@ -1,37 +1,73 @@
 {
     "name": "typescript-to-lua",
     "license": "MIT",
-    "version": "0.3.0",
+    "version": "0.15.2",
     "repository": "https://github.com/Perryvw/TypescriptToLua",
+    "keywords": [
+        "typescript",
+        "lua",
+        "tstl",
+        "transpiler"
+    ],
+    "files": [
+        "dist/**/*.js",
+        "dist/**/*.lua",
+        "dist/**/*.ts"
+    ],
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "scripts": {
-        "build": "tsc -p tsconfig.json",
-        "test": "tslint -p . && tsc -p ./test && node ./test/runner.js",
-        "coverage": "nyc npm test && nyc report --reporter=text-lcov > coverage.lcov && codecov",
-        "coverage-html": "nyc npm test && nyc report --reporter=html",
+        "build": "tsc -p tsconfig.json && npm run build-lualib",
+        "build-lualib": "ts-node ./build_lualib.ts",
+        "pretest": "npm run clean && npm run style-check && npm run build && tsc -p ./test/tsconfig.json",
+        "test": "node ./test/runner.js",
+        "posttest": "npm run clean",
+        "coverage": "nyc --source-map=true npm test && nyc report --reporter=text-lcov > coverage.lcov",
+        "coverage-html": "nyc --source-map=true npm test && nyc report --reporter=html",
+        "test-threaded": "npm run pretest && node ./test/threaded_runner.js && npm run posttest",
+        "test-fast": "npm run pretest && node ./test/runner.js --ignoreDiagnostics && npm run posttest",
+        "clean": "rimraf \"src/**/*.js\" \"src/**/*.js.map\" \"test/**/*.js\" \"test/**/*.js.map\" \"test/compiler/testfiles/*.lua\"",
         "release-patch": "npm version patch",
         "release-minor": "npm version minor",
         "release-major": "npm version major",
         "preversion": "npm run build && npm test",
-        "postversion": "git push && git push --tags"
+        "postversion": "git push && git push --tags",
+        "style-check": "tslint -p . && tslint -c ./tslint.json src/lualib/*.ts"
     },
     "bin": {
-        "tstl": "./dist/Compiler.js"
+        "tstl": "./dist/tstl.js"
+    },
+    "nyc": {
+        "all": true,
+        "extension": [
+            ".ts"
+        ],
+        "include": [
+            "src/**/*"
+        ],
+        "exclude": [
+            "src/lualib/*"
+        ]
     },
     "engines": {
         "node": ">=8.5.0"
     },
     "dependencies": {
-        "typescript": "^2.8.3",
-        "yargs": "^11.1.0"
+        "typescript": "^3.3.1"
     },
     "devDependencies": {
-        "@types/node": "^9.6.7",
-        "@types/yargs": "^11.0.0",
-        "alsatian": "^2.2.1",
-        "codecov": "^3.0.1",
+        "@types/glob": "^5.0.35",
+        "@types/node": "^9.6.23",
+        "alsatian": "^2.3.0",
+        "codecov": "3.0.2",
         "deep-equal": "^1.0.1",
         "fengari": "^0.1.2",
-        "nyc": "^11.7.1",
-        "tslint": "^5.9.1"
+        "flatted": "^2.0.0",
+        "glob": "^7.1.2",
+        "nyc": "^13.3.0",
+        "rimraf": "^2.6.3",
+        "threads": "^0.12.0",
+        "ts-node": "^7.0.0",
+        "tslint": "^5.10.0"
     }
 }

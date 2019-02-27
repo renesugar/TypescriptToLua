@@ -1,10 +1,10 @@
-myNamespace = myNamespace or {}
+myNamespace = myNamespace or {};
 do
-    local myNestedNamespace = myNestedNamespace or {}
-    myNamespace.myNestedNamespace = myNestedNamespace or {}
+    myNamespace.myNestedNamespace = myNamespace.myNestedNamespace or {};
+    local myNestedNamespace = myNamespace.myNestedNamespace;
     do
-        local function nsMember()
-        end
-        myNamespace.myNestedNamespace.nsMember = nsMember
+        local nsMember;
+        nsMember = function()
+        end;
     end
 end

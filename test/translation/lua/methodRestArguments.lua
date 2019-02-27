@@ -1,12 +1,15 @@
-MyClass = MyClass or {}
-MyClass.__index = MyClass
-function MyClass.new(construct, ...)
-    local instance = setmetatable({}, MyClass)
-    if construct and MyClass.constructor then MyClass.constructor(instance, ...) end
-    return instance
-end
-function MyClass.constructor(self)
-end
-function MyClass.varargsFunction(self,a,...)
-    local b = { ... }
-end
+MyClass = MyClass or {};
+MyClass.__index = MyClass;
+MyClass.prototype = MyClass.prototype or {};
+MyClass.prototype.__index = MyClass.prototype;
+MyClass.prototype.constructor = MyClass;
+MyClass.new = function(...)
+    local self = setmetatable({}, MyClass.prototype);
+    self:____constructor(...);
+    return self;
+end;
+MyClass.prototype.____constructor = function(self)
+end;
+MyClass.prototype.varargsFunction = function(self, a, ...)
+    local b = ({...});
+end;

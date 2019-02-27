@@ -1,5 +1,8 @@
 *.js
 node_modules/
+yarn.lock
+
+.vscode/
 
 coverage/
 .nyc*
@@ -16,3 +19,6 @@ coverage/
 .idea/
 
 typescript_lualib.lua
+lualib_bundle.lua
+
+dist/*

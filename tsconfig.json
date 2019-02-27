@@ -4,7 +4,12 @@
         "alwaysStrict" : true,
         "outDir": "./dist/",
         "rootDir": "./src/",
-        "sourceMap": true
+        "declaration": true,
+        "sourceMap": true,
+        "experimentalDecorators": true,
+        "target": "es2017",
+        "module": "commonjs"
     },
-    "exclude": ["test/**/*"]
+    "include": ["src"],
+    "exclude": ["src/lualib"]
 }

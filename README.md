@@ -1,15 +1,23 @@
-# TypescriptToLua
+<div align="center">
+    <img src="logo-hq.png?raw=true" alt="TypeScriptToLua" width="256" />
+    <h1>
+        TypeScriptToLua
+        <p></p>
+        <a href="https://travis-ci.org/TypeScriptToLua/TypeScriptToLua"><img alt="Build status" src="https://img.shields.io/travis/TypeScriptToLua/TypeScriptToLua.svg?style=for-the-badge" /></a>
+        <a href="https://ci.appveyor.com/project/Perryvw/typescripttolua-pa0ym"><img alt="Build status" src="https://img.shields.io/appveyor/ci/Perryvw/typescripttolua-pa0ym.svg?logo=appveyor&style=for-the-badge" /></a>
+        <a href="https://codecov.io/gh/TypeScriptToLua/typescripttolua"><img alt="Coverage" src="https://img.shields.io/codecov/c/gh/TypeScriptToLua/typescripttolua.svg?logo=codecov&style=for-the-badge" /></a>
+        <a href="https://discord.gg/BWAq58Y"><img alt="Chat with us!" src="https://img.shields.io/discord/515854149821267971.svg?style=for-the-badge&colorB=7581dc&logo=discord&logoColor=white"></a>
+    </h1>
+</div>
+
 A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!
 
 Large projects written in lua can become hard to maintain and make it easy to make mistakes. Writing code in TypeScript instead improves maintainability, readability and robustness, with the added bonus of good IDE support. This project is useful in any environment where Lua code is accepted, with the powerful option of simply declaring any existing API using TypeScript declaration files.
 
-[![Build Status](https://travis-ci.org/Perryvw/TypescriptToLua.svg?branch=master)](https://travis-ci.org/Perryvw/TypescriptToLua)
-[![Build status](https://ci.appveyor.com/api/projects/status/github/perryvw/typescripttolua?branch=master&svg=true)](https://ci.appveyor.com/project/Perryvw/typescripttolua)
-[![Coverage](https://codecov.io/gh/perryvw/typescripttolua/branch/master/graph/badge.svg)](https://codecov.io/gh/perryvw/typescripttolua)
-[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/TypescriptToLua/Lobby)
-
 ## Documentation
-More detailed documentation and info on writing declarations can be found [on the wiki](https://github.com/Perryvw/TypescriptToLua/wiki).
+More detailed documentation and info on writing declarations can be found [on the wiki](https://github.com/TypeScriptToLua/TypescriptToLua/wiki).
+
+Changelog can be found in [CHANGELOG.md](https://github.com/TypeScriptToLua/TypescriptToLua/blob/master/CHANGELOG.md)
 
 ## Usage Guide
 
@@ -25,6 +33,10 @@ More detailed documentation and info on writing declarations can be found [on th
 
 `tstl -p path/to/tsconfig.json`
 
+**Compile project in watch mode**
+
+`tstl -p path/to/tsconfig.json --watch`
+
 **Example tsconfig.json**
 ```
 {
@@ -38,10 +50,24 @@ More detailed documentation and info on writing declarations can be found [on th
 }
 ```
 
+## Contributing
+All contributions are welcome, but please read our [contribution guidelines](https://github.com/TypeScriptToLua/TypescriptToLua/blob/master/CONTRIBUTING.md)!
+
 ## Declarations
 The real power of this transpiler is usage together with good declarations for the Lua API provided. Some examples of Lua interface declarations can be found here:
 - [Dota 2 Modding](https://github.com/ModDota/API/tree/master/declarations/server)
 - [Defold Game Engine Scripting](https://github.com/dasannikov/DefoldTypeScript/blob/master/defold.d.ts)
+- [LÖVE 2D Game Development](https://github.com/hazzard993/love-typescript-definitions)
+
+## Building & Tests
+
+`npm run build` to build the project.
+
+`npm run test` to run tests.
+
+`npm run test-threaded` runs test in parallel, faster but less detailed output.
+
+`npm run coverage` or `npm run coverage-html` to generate a coverage report.
 
 ## Sublime Text integration
 This compiler works great in combination with the [Sublime Text Typescript plugin](https://github.com/Microsoft/TypeScript-Sublime-Plugin) (available through the package manager as `TypeScript`).

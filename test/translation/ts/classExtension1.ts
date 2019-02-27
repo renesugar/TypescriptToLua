@@ -1,4 +1,4 @@
-/** !Extension */
+/** @extension */
 class MyClass {
-    myFunction() {}
+    public myFunction() {}
 }
