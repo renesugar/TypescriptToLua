@@ -1,24 +1,12 @@
-*.js
-node_modules/
+node_modules
+/dist
+/coverage
+
 yarn.lock
-
-.vscode/
-
-coverage/
-.nyc*
-*.js.map
-
-# Release
-*.tgz
-
-# OSX
+.vscode
+.idea
 .DS_Store
-*.lcov
 
-# IDEA IDEs
-.idea/
-
-typescript_lualib.lua
-lualib_bundle.lua
-
-dist/*
+benchmark/data/*
+benchmark/dist/*
+!benchmark/dist/json.lua

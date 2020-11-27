@@ -1,108 +1,148 @@
-/** @tupleReturn */
-declare function next<TKey, TValue>(t: { [k: string]: TValue }, index?: TKey): [TKey, TValue];
+Set = class Set<T> {
+    public static [Symbol.species] = Set;
+    public [Symbol.toStringTag] = "Set";
 
-class Set<TValue> {
-    public size: number;
+    public size = 0;
 
-    private items: {[key: string]: boolean}; // Key type is actually TValue
+    private firstKey: T | undefined;
+    private lastKey: T | undefined;
+    private nextKey = new LuaTable<T, T>();
+    private previousKey = new LuaTable<T, T>();
 
-    constructor(other: Iterable<TValue> | TValue[]) {
-        this.items = {};
-        this.size = 0;
+    constructor(values?: Iterable<T> | T[]) {
+        if (values === undefined) return;
 
-        if (other) {
-            const iterable = other as Iterable<TValue>;
-            if (iterable[Symbol.iterator]) {
-                // Iterate manually because Set is compiled with ES5 which doesn't support Iterables in for...of
-                const iterator = iterable[Symbol.iterator]();
-                while (true) {
-                    const result = iterator.next();
-                    if (result.done) {
-                        break;
-                    }
-                    this.add(result.value);
+        const iterable = values as Iterable<T>;
+        if (iterable[Symbol.iterator]) {
+            // Iterate manually because Set is compiled with ES5 which doesn't support Iterables in for...of
+            const iterator = iterable[Symbol.iterator]();
+            while (true) {
+                const result = iterator.next();
+                if (result.done) {
+                    break;
                 }
-            } else {
-                const arr = other as TValue[];
-                this.size = arr.length;
-                for (const value of arr) {
-                    this.items[value as any] = true;
-                }
+                this.add(result.value);
+            }
+        } else {
+            const array = values as T[];
+            for (const value of array) {
+                this.add(value);
             }
         }
     }
 
-    public add(value: TValue): Set<TValue> {
-        if (!this.has(value)) {
+    public add(value: T): Set<T> {
+        const isNewValue = !this.has(value);
+        if (isNewValue) {
             this.size++;
         }
-        this.items[value as any] = true;
+
+        // Do order bookkeeping
+        if (this.firstKey === undefined) {
+            this.firstKey = value;
+            this.lastKey = value;
+        } else if (isNewValue) {
+            this.nextKey.set(this.lastKey, value);
+            this.previousKey.set(value, this.lastKey);
+            this.lastKey = value;
+        }
+
         return this;
     }
 
     public clear(): void {
-        this.items = {};
+        this.nextKey = new LuaTable();
+        this.previousKey = new LuaTable();
+        this.firstKey = undefined;
+        this.lastKey = undefined;
         this.size = 0;
-        return;
     }
 
-    public delete(value: TValue): boolean {
+    public delete(value: T): boolean {
         const contains = this.has(value);
         if (contains) {
             this.size--;
+
+            // Do order bookkeeping
+            const next = this.nextKey.get(value);
+            const previous = this.previousKey.get(value);
+            if (next && previous) {
+                this.nextKey.set(previous, next);
+                this.previousKey.set(next, previous);
+            } else if (next) {
+                this.firstKey = next;
+                this.previousKey.set(next, undefined);
+            } else if (previous) {
+                this.lastKey = previous;
+                this.nextKey.set(previous, undefined);
+            } else {
+                this.firstKey = undefined;
+                this.lastKey = undefined;
+            }
+
+            this.nextKey.set(value, undefined);
+            this.previousKey.set(value, undefined);
         }
-        this.items[value as any] = undefined;
+
         return contains;
     }
 
-    public [Symbol.iterator](): IterableIterator<TValue> {
+    public forEach(callback: (value: T, key: T, set: Set<T>) => any): void {
+        for (const key of this.keys()) {
+            callback(key, key, this);
+        }
+    }
+
+    public has(value: T): boolean {
+        return this.nextKey.get(value) !== undefined || this.lastKey === value;
+    }
+
+    public [Symbol.iterator](): IterableIterator<T> {
         return this.values();
     }
 
-    public entries(): IterableIterator<[TValue, TValue]> {
-        const items = this.items;
-        let key: TValue;
+    public entries(): IterableIterator<[T, T]> {
+        const nextKey = this.nextKey;
+        let key: T = this.firstKey;
         return {
-            [Symbol.iterator](): IterableIterator<[TValue, TValue]> { return this; },
-            next(): IteratorResult<[TValue, TValue]> {
-                [key] = next(items, key);
-                return {done: !key, value: [key, key]};
+            [Symbol.iterator](): IterableIterator<[T, T]> {
+                return this;
+            },
+            next(): IteratorResult<[T, T]> {
+                const result = { done: !key, value: [key, key] as [T, T] };
+                key = nextKey.get(key);
+                return result;
             },
         };
     }
 
-    public forEach(callback: (value: TValue, key: TValue, set: Set<TValue>) => any): void {
-        for (const key in this.items) {
-            callback(key as any, key as any, this);
-        }
-        return;
-    }
-
-    public has(value: TValue): boolean {
-        return this.items[value as any] === true;
-    }
-
-    public keys(): IterableIterator<TValue> {
-        const items = this.items;
-        let key: TValue;
+    public keys(): IterableIterator<T> {
+        const nextKey = this.nextKey;
+        let key: T = this.firstKey;
         return {
-            [Symbol.iterator](): IterableIterator<TValue> { return this; },
-            next(): IteratorResult<TValue> {
-                [key] = next(items, key);
-                return {done: !key, value: key};
+            [Symbol.iterator](): IterableIterator<T> {
+                return this;
+            },
+            next(): IteratorResult<T> {
+                const result = { done: !key, value: key };
+                key = nextKey.get(key);
+                return result;
             },
         };
     }
 
-    public values(): IterableIterator<TValue> {
-        const items = this.items;
-        let key: TValue;
+    public values(): IterableIterator<T> {
+        const nextKey = this.nextKey;
+        let key: T = this.firstKey;
         return {
-            [Symbol.iterator](): IterableIterator<TValue> { return this; },
-            next(): IteratorResult<TValue> {
-                [key] = next(items, key);
-                return {done: !key, value: key};
+            [Symbol.iterator](): IterableIterator<T> {
+                return this;
+            },
+            next(): IteratorResult<T> {
+                const result = { done: !key, value: key };
+                key = nextKey.get(key);
+                return result;
             },
         };
     }
-}
+};

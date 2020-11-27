@@ -1,14 +1,21 @@
 {
     "compilerOptions": {
-        "noImplicitThis" : true,
-        "alwaysStrict" : true,
-        "outDir": "./dist/",
-        "rootDir": "./src/",
+        "target": "es2019",
+        "lib": ["es2019"],
+        "types": ["node"],
+        "module": "commonjs",
+        "experimentalDecorators": true,
+
+        "rootDir": "src",
+        "outDir": "dist",
         "declaration": true,
         "sourceMap": true,
-        "experimentalDecorators": true,
-        "target": "es2017",
-        "module": "commonjs"
+        "newLine": "LF",
+        "stripInternal": true,
+
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true
     },
     "include": ["src"],
     "exclude": ["src/lualib"]

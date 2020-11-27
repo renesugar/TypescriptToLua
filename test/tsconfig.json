@@ -1,13 +1,18 @@
 {
+    "extends": "../tsconfig.json",
     "compilerOptions": {
-        "experimentalDecorators": true,
-        "sourceMap": true,
-        "target": "es2017",
-        "module": "commonjs"
+        "rootDir": "..",
+        "types": ["node", "jest"],
+        "baseUrl": ".",
+        "paths": { "*": ["types/*"] }
     },
+    "include": [".", "../src"],
     "exclude": [
-        "translation/ts/*",
-        "compiler/projects/*",
-        "compiler/testfiles/*"
+        "translation/transformation",
+        "cli/errors",
+        "cli/watch",
+        "transpile/directories",
+        "transpile/outFile",
+        "../src/lualib"
     ]
 }

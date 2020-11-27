@@ -1,115 +1,159 @@
-/** @tupleReturn */
-declare function next<TKey, TValue>(t: { [k: string]: TValue }, index?: TKey): [TKey, TValue];
+Map = class Map<K, V> {
+    public static [Symbol.species] = Map;
+    public [Symbol.toStringTag] = "Map";
 
-class Map<TKey, TValue> {
-    public size: number;
+    private items = new LuaTable<K, V>();
+    public size = 0;
 
-    private items: {[key: string]: TValue}; // Type of key is actually TKey
+    // Key-order variables
+    private firstKey: K | undefined;
+    private lastKey: K | undefined;
+    private nextKey = new LuaTable<K, K>();
+    private previousKey = new LuaTable<K, K>();
 
-    constructor(other: Iterable<[TKey, TValue]> | Array<[TKey, TValue]>) {
-        this.items = {};
-        this.size = 0;
+    constructor(entries?: Iterable<readonly [K, V]> | Array<readonly [K, V]>) {
+        if (entries === undefined) return;
 
-        if (other) {
-            const iterable = other as Iterable<[TKey, TValue]>;
-            if (iterable[Symbol.iterator]) {
-                // Iterate manually because Map is compiled with ES5 which doesn't support Iterables in for...of
-                const iterator = iterable[Symbol.iterator]();
-                while (true) {
-                    const result = iterator.next();
-                    if (result.done) {
-                        break;
-                    }
-                    const value: [TKey, TValue] = result.value; // Ensures index is offset when tuple is accessed
-                    this.set(value[0], value[1]);
+        const iterable = entries as Iterable<[K, V]>;
+        if (iterable[Symbol.iterator]) {
+            // Iterate manually because Map is compiled with ES5 which doesn't support Iterables in for...of
+            const iterator = iterable[Symbol.iterator]();
+            while (true) {
+                const result = iterator.next();
+                if (result.done) {
+                    break;
                 }
-            } else {
-                const arr = other as Array<[TKey, TValue]>;
-                this.size = arr.length;
-                for (const kvp of arr) {
-                    this.items[kvp[0] as any] = kvp[1];
-                }
+
+                const value: [K, V] = result.value; // Ensures index is offset when tuple is accessed
+                this.set(value[0], value[1]);
+            }
+        } else {
+            const array = entries as Array<[K, V]>;
+            for (const kvp of array) {
+                this.set(kvp[0], kvp[1]);
             }
         }
     }
 
     public clear(): void {
-        this.items = {};
+        this.items = new LuaTable();
+        this.nextKey = new LuaTable();
+        this.previousKey = new LuaTable();
+        this.firstKey = undefined;
+        this.lastKey = undefined;
         this.size = 0;
-        return;
     }
 
-    public delete(key: TKey): boolean {
+    public delete(key: K): boolean {
         const contains = this.has(key);
         if (contains) {
             this.size--;
+
+            // Do order bookkeeping
+            const next = this.nextKey.get(key);
+            const previous = this.previousKey.get(key);
+            if (next && previous) {
+                this.nextKey.set(previous, next);
+                this.previousKey.set(next, previous);
+            } else if (next) {
+                this.firstKey = next;
+                this.previousKey.set(next, undefined);
+            } else if (previous) {
+                this.lastKey = previous;
+                this.nextKey.set(previous, undefined);
+            } else {
+                this.firstKey = undefined;
+                this.lastKey = undefined;
+            }
+
+            this.nextKey.set(key, undefined);
+            this.previousKey.set(key, undefined);
         }
-        this.items[key as any] = undefined;
+        this.items.set(key, undefined);
+
         return contains;
     }
 
-    public [Symbol.iterator](): IterableIterator<[TKey, TValue]> {
-        return this.entries();
-    }
-
-    public entries(): IterableIterator<[TKey, TValue]> {
-        const items = this.items;
-        let key: TKey;
-        let value: TValue;
-        return {
-            [Symbol.iterator](): IterableIterator<[TKey, TValue]> { return this; },
-            next(): IteratorResult<[TKey, TValue]> {
-                [key, value] = next(items, key);
-                return {done: !key, value: [key, value]};
-            },
-        };
-    }
-
-    public forEach(callback: (value: TValue, key: TKey, map: Map<TKey, TValue>) => any): void {
-        for (const key in this.items) {
-            callback(this.items[key], key as any, this);
+    public forEach(callback: (value: V, key: K, map: Map<K, V>) => any): void {
+        for (const key of this.keys()) {
+            callback(this.items.get(key), key, this);
         }
-        return;
     }
 
-    public get(key: TKey): TValue {
-        return this.items[key as any];
+    public get(key: K): V | undefined {
+        return this.items.get(key);
     }
 
-    public has(key: TKey): boolean {
-        return this.items[key as any] !== undefined;
+    public has(key: K): boolean {
+        return this.nextKey.get(key) !== undefined || this.lastKey === key;
     }
 
-    public keys(): IterableIterator<TKey> {
-        const items = this.items;
-        let key: TKey;
-        return {
-            [Symbol.iterator](): IterableIterator<TKey> { return this; },
-            next(): IteratorResult<TKey> {
-                [key] = next(items, key);
-                return {done: !key, value: key};
-            },
-        };
-    }
-
-    public set(key: TKey, value: TValue): Map<TKey, TValue> {
-        if (!this.has(key)) {
+    public set(key: K, value: V): this {
+        const isNewValue = !this.has(key);
+        if (isNewValue) {
             this.size++;
         }
-        this.items[key as any] = value;
+        this.items.set(key, value);
+
+        // Do order bookkeeping
+        if (this.firstKey === undefined) {
+            this.firstKey = key;
+            this.lastKey = key;
+        } else if (isNewValue) {
+            this.nextKey.set(this.lastKey, key);
+            this.previousKey.set(key, this.lastKey);
+            this.lastKey = key;
+        }
+
         return this;
     }
 
-    public values(): IterableIterator<TValue> {
-        const items = this.items;
-        let key: TKey;
-        let value: TValue;
+    public [Symbol.iterator](): IterableIterator<[K, V]> {
+        return this.entries();
+    }
+
+    public entries(): IterableIterator<[K, V]> {
+        const { items, nextKey } = this;
+        let key = this.firstKey;
         return {
-            [Symbol.iterator](): IterableIterator<TValue> { return this; },
-            next(): IteratorResult<TValue> {
-                [key, value] = next(items, key);
-                return {done: !key, value};
+            [Symbol.iterator](): IterableIterator<[K, V]> {
+                return this;
+            },
+            next(): IteratorResult<[K, V]> {
+                const result = { done: !key, value: [key, items.get(key)] as [K, V] };
+                key = nextKey.get(key);
+                return result;
             },
         };
     }
-}
+
+    public keys(): IterableIterator<K> {
+        const nextKey = this.nextKey;
+        let key = this.firstKey;
+        return {
+            [Symbol.iterator](): IterableIterator<K> {
+                return this;
+            },
+            next(): IteratorResult<K> {
+                const result = { done: !key, value: key };
+                key = nextKey.get(key);
+                return result;
+            },
+        };
+    }
+
+    public values(): IterableIterator<V> {
+        const { items, nextKey } = this;
+        let key = this.firstKey;
+        return {
+            [Symbol.iterator](): IterableIterator<V> {
+                return this;
+            },
+            next(): IteratorResult<V> {
+                const result = { done: !key, value: items.get(key) };
+                key = nextKey.get(key);
+                return result;
+            },
+        };
+    }
+};
